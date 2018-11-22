@@ -30,53 +30,39 @@ $op = $_POST['op'] ? $_POST['op'] : $_GET['op'];
 // 分支处理
 if (empty($op)) {
 	include ('./index.html');
-} elseif ($op == 'addquestion') {
-	// 题目
-	$title = $_POST['title'];
-	$label=$_POST['label'];
-	// 答案
+} elseif ($op == 'addfood') {//添加菜品html
+
+	$ename = $_POST['ename'];
+	$cname = $_POST['cname'];
+	$price = $_POST['price'];
+	
 	$tmp_file = $_FILES['answer']['tmp_name'];
 	$file_types = explode(".", $_FILES['answer']['name']);
 	$file_type = $file_types[count($file_types) - 1];
-	$savePath = '/usr/local/nginx/html/api/upload/question/';
+	$savePath = '/usr/local/nginx/html/xejz-api/upload/food-image/';
 	$file_name = time() . "." . $file_type;
 
 	copy($tmp_file, $savePath . $file_name);
 	// 查询语句
-	$conn -> query("INSERT INTO question (title,answer,label) VALUES ('$title','$file_name','$label')");
+	$conn -> query("INSERT INTO zx_class (class_name,class_cname,class_price,image_path) VALUES ('$ename','$cname','$price','$file_name')");
 	// 关闭数据库
 	$conn -> close();
 	// 返回主页
 	header("location:" . "./api.php");
-} elseif ($op == 'searchfood') {
-	$keyword = js_unescape($_GET['wd']);
-	$res = $conn -> query("SELECT * FROM classes");
-	$max_percent = 0.0;
-	$result = null;
-	while ($row = $res -> fetch_assoc()) {
-		similar_text($row['class_name'], $keyword, $percent);
-		if ($percent >= $max_percent) {
-			$max_percent = $percent;
-			$result = $row;
-		}
+} elseif ($op == 'searchfood') {//查菜
+	$list=json_decode($_GET['cai'],true);
+	$result=array();
+	foreach($list as $k => $v){
+		$res = $conn -> query("SELECT * FROM zx-class WHERE class_name='{$v}'");
+		$row = $res -> fetch_assoc();
+		$result[$v] = $row;
 	}
-	if ($max_percent > 0.0) {
-		echo json_encode(array(
-			'errCode' => 0,
-			'errMsg' => 'ok',
-			'result' => $result,
-			'ratio' => $max_percent
-		));
-	} else {
-		echo json_encode(array(
-			'errCode' => 1,
-			'errMsg' => '查询无结果'
-		));
-	}
-	exit();
-} elseif ($op == 'delquestion') {
+	echo json_encode(array('result'=>$result));
+
+	
+} elseif ($op == 'delfood') {//删除菜品html
 	$id = $_GET['id'];
-	$conn -> query("delete from question where id=$id");
+	$conn -> query("delete from zx_class where class_id=$id");
 	$conn -> close();
 	header("location:" . "./api.php");
 } elseif ($op == 'addproblem') {// 提问题
